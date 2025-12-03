@@ -121,7 +121,7 @@
             opacity: 0;
         }
         .expanded .expand-content {
-            max-height: 1000px; /* Arbitrary large height */
+            max-height: 2000px; /* Arbitrary large height */
             opacity: 1;
             transition: max-height 0.5s ease-in, opacity 0.3s ease-in;
         }
@@ -130,6 +130,22 @@
         }
         .expanded .chevron {
             transform: rotate(180deg);
+        }
+        
+        /* Modal Styles */
+        dialog {
+            background: #1e293b;
+            color: #cbd5e1;
+            border: 1px solid #334155;
+            border-radius: 1rem;
+            padding: 0;
+            max-width: 42rem;
+            width: 90%;
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.5);
+        }
+        dialog::backdrop {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
         }
     </style>
 </head>
@@ -330,7 +346,7 @@
 
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-xl font-bold text-white">Class Features & Feats</h3>
-                <button onclick="app.addAbility()" class="bg-accent hover:opacity-90 text-slate-900 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-red-900/20">
+                <button onclick="app.openFeatModal()" class="bg-accent hover:opacity-90 text-slate-900 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-red-900/20">
                     <i class="ph-bold ph-plus mr-1"></i> Custom Feature
                 </button>
             </div>
@@ -363,7 +379,7 @@
                         <span class="text-slate-400">Total Weight:</span>
                         <span id="total-weight" class="text-accent font-bold">0</span> <span class="text-slate-500">lbs</span>
                     </div>
-                    <button onclick="app.addItem()" class="bg-accent hover:opacity-90 text-slate-900 px-3 py-1 rounded-xl text-sm font-bold transition-all">
+                    <button onclick="app.openItemModal()" class="bg-accent hover:opacity-90 text-slate-900 px-3 py-1 rounded-xl text-sm font-bold transition-all">
                         <i class="ph-bold ph-plus"></i> Custom Item
                     </button>
                 </div>
@@ -429,8 +445,120 @@
                 </div>
             </div>
         </div>
-
     </main>
+
+    <!-- Modal: New Item -->
+    <dialog id="modal-item">
+        <div class="p-6">
+            <h3 class="text-xl font-bold text-white mb-4">Add Custom Item</h3>
+            <form id="form-item" method="dialog" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Item Name</label>
+                        <input type="text" name="name" class="w-full p-2 rounded bg-slate-900 border border-slate-700" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Source</label>
+                        <input type="text" name="source" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. PHB">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Category</label>
+                        <input type="text" name="category" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. Weapon">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Cost (gp)</label>
+                        <input type="number" step="0.01" name="cost" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Weight (lb)</label>
+                        <input type="number" step="0.1" name="weight" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Rarity</label>
+                        <select name="rarity" class="w-full p-2 rounded bg-slate-900 border border-slate-700">
+                            <option value="Common">Common</option>
+                            <option value="Uncommon">Uncommon</option>
+                            <option value="Rare">Rare</option>
+                            <option value="Very Rare">Very Rare</option>
+                            <option value="Legendary">Legendary</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2 pt-5">
+                         <input type="checkbox" name="isWearable" id="chk-wearable" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-accent">
+                         <label for="chk-wearable" class="text-sm font-bold text-slate-400">Is Wearable?</label>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-700 pt-4 mt-2">
+                    <div class="flex items-center gap-2 mb-2">
+                         <input type="checkbox" name="isWeapon" id="chk-weapon" class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-accent" onchange="app.toggleWeaponFields(this.checked)">
+                         <label for="chk-weapon" class="text-sm font-bold text-slate-400">Is Weapon / Attack?</label>
+                    </div>
+                    <div id="weapon-fields" class="grid grid-cols-2 gap-4 hidden">
+                         <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase">Damage Dice</label>
+                            <input type="text" name="damage" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. 1d8">
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-slate-500 uppercase">Damage Type</label>
+                            <input type="text" name="damageType" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. Slashing">
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Description</label>
+                    <textarea name="desc" class="w-full h-24 p-2 rounded bg-slate-900 border border-slate-700 resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-item').close()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-colors">Cancel</button>
+                    <button type="button" onclick="app.saveCustomItem()" class="bg-accent text-slate-900 font-bold px-4 py-2 rounded-lg hover:opacity-90">Create Item</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+
+    <!-- Modal: New Feat -->
+    <dialog id="modal-feat">
+        <div class="p-6">
+            <h3 class="text-xl font-bold text-white mb-4">Add Custom Feature/Feat</h3>
+            <form id="form-feat" method="dialog" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Feature Name</label>
+                        <input type="text" name="name" class="w-full p-2 rounded bg-slate-900 border border-slate-700" required>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Source</label>
+                        <input type="text" name="source" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. PHB">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase">Prerequisites</label>
+                        <input type="text" name="prereq" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. Dex 13">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Ability Score Increase</label>
+                        <input type="text" name="asi" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. +1 Str">
+                    </div>
+                     <div class="col-span-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase">Customization Options</label>
+                        <input type="text" name="options" class="w-full p-2 rounded bg-slate-900 border border-slate-700" placeholder="e.g. Choose one maneuver">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-xs font-bold text-slate-500 uppercase">Description</label>
+                    <textarea name="desc" class="w-full h-32 p-2 rounded bg-slate-900 border border-slate-700 resize-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="document.getElementById('modal-feat').close()" class="px-4 py-2 rounded-lg text-slate-400 hover:text-white transition-colors">Cancel</button>
+                    <button type="button" onclick="app.saveCustomFeat()" class="bg-accent text-slate-900 font-bold px-4 py-2 rounded-lg hover:opacity-90">Create Feature</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
 
     <script>
         /**
@@ -546,7 +674,9 @@
                                     ${item.rarity ? `<div><span class="text-slate-500">Rarity:</span> ${item.rarity}</div>` : ''}
                                     ${item.weightLb ? `<div><span class="text-slate-500">Weight:</span> ${item.weightLb} lb</div>` : ''}
                                     ${item.averageCostGp ? `<div><span class="text-slate-500">Cost:</span> ${item.averageCostGp} gp</div>` : ''}
+                                    ${item.isWearable ? `<div><span class="text-accent">Wearable</span></div>` : ''}
                                 </div>
+                                ${item.source ? `<div><span class="text-slate-500">Source:</span> ${item.source}</div>` : ''}
                                 ${item.description ? `<div class="italic border-l-2 border-slate-600 pl-2">${item.description}</div>` : ''}
                                 ${item.isWeapon ? `
                                     <div class="flex gap-2 mt-2">
@@ -599,6 +729,7 @@
                                 ${feat.prerequisites ? `<div><span class="text-slate-500">Prereq:</span> <span class="text-red-300">${feat.prerequisites}</span></div>` : ''}
                                 <div class="italic border-l-2 border-slate-600 pl-2 mt-2">${feat.description}</div>
                                 ${feat.abilityScoreIncrease ? `<div class="mt-2 bg-slate-900 p-2 rounded"><strong>ASI:</strong> ${feat.abilityScoreIncrease}</div>` : ''}
+                                ${feat.customizationOptions ? `<div class="mt-1 bg-slate-900 p-2 rounded"><strong>Options:</strong> ${feat.customizationOptions}</div>` : ''}
                                 <button onclick="app.addFeatFromCompendium(${feat.id})" class="w-full mt-3 bg-accent text-slate-900 font-bold py-2 rounded-lg hover:opacity-90 transition-opacity">
                                     Add Feature
                                 </button>
@@ -613,7 +744,72 @@
                 element.classList.toggle('expanded');
             },
 
-            // --- Addition Logic ---
+            // --- Custom Modal Logic ---
+
+            openItemModal() {
+                document.getElementById('form-item').reset();
+                document.getElementById('modal-item').showModal();
+            },
+
+            toggleWeaponFields(checked) {
+                const el = document.getElementById('weapon-fields');
+                if(checked) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            },
+
+            saveCustomItem() {
+                const form = document.getElementById('form-item');
+                const formData = new FormData(form);
+                
+                const newItem = {
+                    name: formData.get('name'),
+                    qty: 1,
+                    source: formData.get('source'),
+                    category: formData.get('category'),
+                    cost: formData.get('cost'),
+                    weight: formData.get('weight'),
+                    rarity: formData.get('rarity'),
+                    isWearable: formData.get('isWearable') === 'on',
+                    isAttack: formData.get('isWeapon') === 'on',
+                    damage: formData.get('damage'),
+                    damageType: formData.get('damageType'),
+                    desc: formData.get('desc'),
+                };
+
+                this.data.inventory.push(newItem);
+                this.saveData();
+                this.renderInventory();
+                this.renderAttacks();
+                document.getElementById('modal-item').close();
+            },
+
+            openFeatModal() {
+                document.getElementById('form-feat').reset();
+                document.getElementById('modal-feat').showModal();
+            },
+
+            saveCustomFeat() {
+                const form = document.getElementById('form-feat');
+                const formData = new FormData(form);
+                
+                const newFeat = {
+                    title: formData.get('name'),
+                    source: formData.get('source'),
+                    prereq: formData.get('prereq'),
+                    asi: formData.get('asi'),
+                    options: formData.get('options'),
+                    desc: formData.get('desc'),
+                    roll: '', // Default empty for custom
+                };
+
+                this.data.abilities.push(newFeat);
+                this.saveData();
+                this.renderAbilities();
+                document.getElementById('modal-feat').close();
+            },
+
+
+            // --- Compendium Import ---
 
             addItemFromCompendium(id) {
                 const item = this.compendiumItems.find(i => i.id === id);
@@ -626,11 +822,12 @@
                     desc: item.description || '',
                     isAttack: item.isWeapon || false,
                     damage: item.attackDamage || '',
-                    // Extended Data
                     rarity: item.rarity,
                     cost: item.averageCostGp,
                     category: item.category,
-                    damageType: item.damageType
+                    damageType: item.damageType,
+                    source: item.source,
+                    isWearable: item.isWearable
                 });
                 this.saveData();
                 this.renderInventory();
@@ -654,10 +851,11 @@
                 this.data.abilities.push({
                     title: feat.name,
                     desc: feat.description,
-                    roll: '', // Feats usually don't have roll formulas in JSON, user adds manually if needed
-                    // Extended Data
+                    roll: '', 
                     source: feat.source,
-                    prereq: feat.prerequisites
+                    prereq: feat.prerequisites,
+                    asi: feat.abilityScoreIncrease,
+                    options: feat.customizationOptions
                 });
                 this.saveData();
                 this.renderAbilities();
@@ -858,9 +1056,10 @@
                             <div class="expand-content bg-slate-900/50">
                                 <div class="p-4 border-t border-slate-700 space-y-3">
                                     <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
-                                        ${item.category ? `<div>Type: ${item.category}</div>` : ''}
-                                        ${item.rarity ? `<div>Rarity: ${item.rarity}</div>` : ''}
-                                        ${item.cost ? `<div>Val: ${item.cost} gp</div>` : ''}
+                                        <div>Category: <input type="text" value="${item.category || ''}" onchange="app.updateItem(${index}, 'category', this.value)" class="bg-transparent border-b border-slate-700 w-20"></div>
+                                        <div>Rarity: <input type="text" value="${item.rarity || ''}" onchange="app.updateItem(${index}, 'rarity', this.value)" class="bg-transparent border-b border-slate-700 w-20"></div>
+                                        <div>Val: <input type="number" value="${item.cost || ''}" onchange="app.updateItem(${index}, 'cost', this.value)" class="bg-transparent border-b border-slate-700 w-16"> gp</div>
+                                        <div>Source: <input type="text" value="${item.source || ''}" onchange="app.updateItem(${index}, 'source', this.value)" class="bg-transparent border-b border-slate-700 w-20"></div>
                                     </div>
                                     
                                     <textarea onchange="app.updateItem(${index}, 'desc', this.value)"
@@ -879,8 +1078,12 @@
                                             <span class="text-xs text-slate-500 uppercase font-bold">Dmg</span>
                                             <input type="text" value="${item.damage}" 
                                                 onchange="app.updateItem(${index}, 'damage', this.value)"
-                                                class="w-16 bg-slate-900 border border-slate-700 rounded text-center text-xs p-1 focus-accent" 
+                                                class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-xs p-1 focus-accent" 
                                                 placeholder="1d8">
+                                            <input type="text" value="${item.damageType || ''}" 
+                                                onchange="app.updateItem(${index}, 'damageType', this.value)"
+                                                class="w-16 bg-slate-900 border border-slate-700 rounded text-center text-xs p-1 focus-accent" 
+                                                placeholder="Type">
                                         </div>
                                     </div>
                                 </div>
@@ -923,11 +1126,27 @@
                             <!-- Expanded Content -->
                             <div class="expand-content bg-slate-900/50">
                                 <div class="p-4 border-t border-slate-700 space-y-3">
-                                    ${ability.prereq ? `<div class="text-xs text-slate-500">Prerequisites: ${ability.prereq}</div>` : ''}
-                                    
+                                     <div class="grid grid-cols-2 gap-2 text-xs text-slate-400 mb-2">
+                                        <div>Source: <input type="text" value="${ability.source || ''}" onchange="app.updateAbility(${index}, 'source', this.value)" class="bg-transparent border-b border-slate-700 w-24"></div>
+                                        <div>Prereq: <input type="text" value="${ability.prereq || ''}" onchange="app.updateAbility(${index}, 'prereq', this.value)" class="bg-transparent border-b border-slate-700 w-24"></div>
+                                    </div>
+
                                     <textarea onchange="app.updateAbility(${index}, 'desc', this.value)"
                                         class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-400 h-24 resize-none focus:border-accent" placeholder="Description...">${ability.desc}</textarea>
                                     
+                                     ${ability.asi ? `
+                                        <div class="bg-slate-900 p-2 rounded text-xs">
+                                            <strong class="text-slate-500">ASI:</strong>
+                                            <input type="text" value="${ability.asi}" onchange="app.updateAbility(${index}, 'asi', this.value)" class="bg-transparent border-none w-full">
+                                        </div>` : ''
+                                     }
+                                     ${ability.options ? `
+                                        <div class="bg-slate-900 p-2 rounded text-xs">
+                                            <strong class="text-slate-500">Options:</strong>
+                                            <input type="text" value="${ability.options}" onchange="app.updateAbility(${index}, 'options', this.value)" class="bg-transparent border-none w-full">
+                                        </div>` : ''
+                                     }
+
                                     <div class="flex items-center gap-2 border-t border-slate-700/50 pt-2">
                                         <label class="text-xs font-bold text-slate-500 uppercase">Roll Formula:</label>
                                         <input type="text" value="${ability.roll || ''}" 
