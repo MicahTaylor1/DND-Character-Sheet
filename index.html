@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcane Sheet | D&D 5e</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons (Lightweight, modern icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Cinzel:wght@600;800&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- Dynamic Theme Variables --- */
+        :root {
+            --accent-h: 0;
+            --accent-s: 94%;
+            --accent-l: 65%; /* Default Light Red */
+            --accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));
+            --accent-dim: hsl(var(--accent-h), var(--accent-s), 20%);
+            --accent-glow: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.3);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Slate 900 */
+            color: #cbd5e1; /* Slate 300 */
+        }
+
+        h1, h2, h3, .cinzel {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* --- Custom Scrollbar --- */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent); 
+        }
+
+        /* --- Utility Classes for Dynamic Colors --- */
+        .text-accent { color: var(--accent); }
+        .bg-accent { background-color: var(--accent); }
+        .bg-accent-dim { background-color: var(--accent-dim); }
+        .border-accent { border-color: var(--accent); }
+        .focus-accent:focus { 
+            border-color: var(--accent); 
+            box-shadow: 0 0 0 2px var(--accent-glow);
+            outline: none;
+        }
+        .ring-accent:focus {
+            --tw-ring-color: var(--accent);
+        }
+
+        /* --- Input Styling --- */
+        input, textarea, select {
+            background-color: #1e293b; /* Slate 800 */
+            border: 1px solid #334155; /* Slate 700 */
+            color: white;
+            transition: all 0.2s ease;
+        }
+        input:hover, textarea:hover {
+            border-color: #475569;
+        }
+
+        /* Hide number arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+
+        /* Tab Animation */
+        .tab-content {
+            display: none;
+            opacity: 0;
+            animation: fadeIn 0.3s forwards;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .stat-mod-box {
+            position: absolute;
+            bottom: -10px;
+            background: #0f172a;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+        }
+        
+        .attack-card {
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        /* Accordion Expansion Styles */
+        .expand-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+        .expanded .expand-content {
+            max-height: 1000px; /* Arbitrary large height */
+            opacity: 1;
+            transition: max-height 0.5s ease-in, opacity 0.3s ease-in;
+        }
+        .chevron {
+            transition: transform 0.3s ease;
+        }
+        .expanded .chevron {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden pb-10">
+
+    <!-- Header / Settings -->
+    <header class="w-full max-w-5xl mx-auto p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3">
+            <i class="ph-fill ph-dragon text-4xl text-accent"></i>
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">ARCANE SHEET</h1>
+                <p class="text-xs text-slate-500">Persistent Storage Enabled</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 bg-slate-800 p-2 rounded-xl border border-slate-700">
+            <!-- Color Picker -->
+            <div class="flex items-center gap-2 px-2">
+                <label for="accentColor" class="text-xs font-bold uppercase tracking-wider text-slate-400">Theme</label>
+                <input type="color" id="accentColor" value="#f87171" class="w-8 h-8 rounded-full cursor-pointer p-0 border-none overflow-hidden" title="Change Accent Color">
+            </div>
+            
+            <div class="h-6 w-px bg-slate-700"></div>
+
+            <button onclick="app.resetData()" class="text-xs text-slate-400 hover:text-red-400 font-bold uppercase transition-colors px-2">
+                Reset
+            </button>
+        </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="w-full max-w-5xl mx-auto px-4 mb-6">
+        <div class="grid grid-cols-5 bg-slate-800 p-1 rounded-2xl gap-1">
+            <button class="nav-btn py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-700 transition-all active-tab" onclick="app.switchTab('main', this)">
+                <i class="ph ph-user block md:hidden text-xl mb-1 mx-auto"></i>
+                <span class="hidden md:block">Main</span>
+            </button>
+            <button class="nav-btn py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-700 transition-all" onclick="app.switchTab('skills', this)">
+                <i class="ph ph-list-checks block md:hidden text-xl mb-1 mx-auto"></i>
+                <span class="hidden md:block">Skills</span>
+            </button>
+            <button class="nav-btn py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-700 transition-all" onclick="app.switchTab('abilities', this)">
+                <i class="ph ph-lightning block md:hidden text-xl mb-1 mx-auto"></i>
+                <span class="hidden md:block">Feats</span>
+            </button>
+            <button class="nav-btn py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-700 transition-all" onclick="app.switchTab('inventory', this)">
+                <i class="ph ph-backpack block md:hidden text-xl mb-1 mx-auto"></i>
+                <span class="hidden md:block">Inventory</span>
+            </button>
+            <button class="nav-btn py-3 rounded-xl text-sm font-bold text-slate-400 hover:bg-slate-700 transition-all" onclick="app.switchTab('backstory', this)">
+                <i class="ph ph-scroll block md:hidden text-xl mb-1 mx-auto"></i>
+                <span class="hidden md:block">Lore</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="w-full max-w-5xl mx-auto px-4 flex-grow">
+
+        <!-- TAB: MAIN STATS -->
+        <div id="tab-main" class="tab-content active">
+            
+            <!-- Character Header Info -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-6">
+                <!-- Name -->
+                <div class="md:col-span-6 flex flex-col gap-1">
+                    <label class="text-xs uppercase font-bold text-slate-500 tracking-wider ml-1">Character Name</label>
+                    <input type="text" data-model="name" class="w-full text-2xl font-bold p-3 rounded-xl bg-slate-800 focus-accent" placeholder="Enter Name...">
+                </div>
+                <!-- Details -->
+                <div class="md:col-span-6 grid grid-cols-3 gap-2">
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs uppercase font-bold text-slate-500 tracking-wider ml-1">Class</label>
+                        <input type="text" data-model="class" class="w-full p-3 rounded-xl bg-slate-800 text-sm focus-accent" placeholder="Class">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs uppercase font-bold text-slate-500 tracking-wider ml-1">Level</label>
+                        <input type="number" data-model="level" class="w-full p-3 rounded-xl bg-slate-800 text-sm focus-accent" placeholder="1">
+                    </div>
+                    <div class="flex flex-col gap-1">
+                        <label class="text-xs uppercase font-bold text-slate-500 tracking-wider ml-1">Race</label>
+                        <input type="text" data-model="race" class="w-full p-3 rounded-xl bg-slate-800 text-sm focus-accent" placeholder="Race">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vitals Row -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+                <!-- HP -->
+                <div class="md:col-span-2 bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col justify-between relative overflow-hidden group">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-accent"></div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase">Hit Points</label>
+                        <i class="ph-fill ph-heart text-accent text-xl"></i>
+                    </div>
+                    <div class="flex items-end gap-2">
+                        <input type="number" data-model="hp.current" class="text-3xl font-bold bg-transparent border-b border-slate-600 w-20 focus-accent p-0" placeholder="0">
+                        <span class="text-2xl text-slate-500">/</span>
+                        <input type="number" data-model="hp.max" class="text-xl text-slate-400 bg-transparent border-none w-16 p-0" placeholder="Max">
+                    </div>
+                </div>
+
+                <!-- AC -->
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-1">Armor Class</label>
+                    <input type="number" data-model="ac" class="text-3xl font-bold bg-transparent border-none w-full text-center focus:ring-0" placeholder="10">
+                </div>
+
+                <!-- Initiative -->
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-1">Initiative</label>
+                    <input type="text" data-model="initiative" class="text-3xl font-bold bg-transparent border-none w-full text-center focus:ring-0" placeholder="+0">
+                </div>
+
+                <!-- Speed -->
+                <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex flex-col items-center justify-center text-center">
+                    <label class="text-xs font-bold text-slate-400 uppercase mb-1">Speed</label>
+                    <div class="flex items-baseline justify-center gap-1">
+                        <input type="number" data-model="speed" class="text-3xl font-bold bg-transparent border-none w-16 text-right focus:ring-0" placeholder="30">
+                        <span class="text-xs text-slate-500">ft</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ATTACKS & ACTIONS DASHBOARD -->
+            <div id="combat-section" class="mb-8 hidden">
+                <h3 class="text-accent text-sm font-bold uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">Attacks & Actions</h3>
+                <div id="attacks-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Attacks Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Core Attributes -->
+            <h3 class="text-accent text-sm font-bold uppercase tracking-widest mb-4 border-b border-slate-800 pb-2">Core Attributes</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div id="attr-str"></div>
+                <div id="attr-dex"></div>
+                <div id="attr-con"></div>
+                <div id="attr-int"></div>
+                <div id="attr-wis"></div>
+                <div id="attr-cha"></div>
+            </div>
+
+            <!-- Prof Bonus & Inspiration -->
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <div class="bg-slate-800 rounded-xl p-3 flex items-center gap-4 border border-slate-700">
+                    <div class="h-10 w-10 rounded-full bg-accent-dim flex items-center justify-center text-accent font-bold text-xl">+</div>
+                    <div class="flex-grow">
+                        <label class="text-xs text-slate-400 uppercase font-bold block">Proficiency</label>
+                        <input type="text" data-model="proficiency" class="bg-transparent border-none w-full font-bold text-lg p-0" placeholder="+2">
+                    </div>
+                </div>
+                <div class="bg-slate-800 rounded-xl p-3 flex items-center gap-4 border border-slate-700">
+                    <div class="h-10 w-10 rounded-full bg-yellow-900/30 flex items-center justify-center text-yellow-500 font-bold text-xl">
+                        <i class="ph-fill ph-star"></i>
+                    </div>
+                    <div class="flex-grow">
+                        <label class="text-xs text-slate-400 uppercase font-bold block">Inspiration</label>
+                        <div class="flex items-center gap-2 mt-1">
+                            <input type="checkbox" data-model="inspiration" class="w-5 h-5 rounded border-slate-600 bg-slate-700 text-accent focus:ring-accent">
+                            <span class="text-xs text-slate-500">Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SKILLS -->
+        <div id="tab-skills" class="tab-content">
+            <div class="bg-slate-800 rounded-2xl p-6 border border-slate-700">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold text-white">Skills</h3>
+                    <button onclick="app.addCustomSkill()" class="text-accent text-sm font-bold hover:text-white transition-colors flex items-center gap-1">
+                        <i class="ph-bold ph-plus"></i> Add Custom
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2" id="skills-container">
+                    <!-- Skills injected via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: ABILITIES / FEATS -->
+        <div id="tab-abilities" class="tab-content">
+            <!-- Search Section -->
+            <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 mb-6">
+                <h4 class="text-sm font-bold text-slate-400 uppercase mb-2">Compendium Search (Feats)</h4>
+                <div class="flex gap-2">
+                    <input type="text" id="feat-search-input" class="flex-grow p-2 rounded-xl bg-slate-900 border border-slate-700 focus-accent text-sm" placeholder="Search by Name or ID...">
+                    <button onclick="app.searchFeats()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                    </button>
+                </div>
+                <!-- Search Results -->
+                <div id="feat-search-results" class="mt-4 space-y-2"></div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Class Features & Feats</h3>
+                <button onclick="app.addAbility()" class="bg-accent hover:opacity-90 text-slate-900 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-red-900/20">
+                    <i class="ph-bold ph-plus mr-1"></i> Custom Feature
+                </button>
+            </div>
+            
+            <div id="abilities-container" class="space-y-3">
+                <!-- Ability Cards injected here -->
+            </div>
+        </div>
+
+        <!-- TAB: INVENTORY -->
+        <div id="tab-inventory" class="tab-content">
+            
+            <!-- Search Section -->
+            <div class="bg-slate-800/50 rounded-2xl p-4 border border-slate-700 mb-6">
+                <h4 class="text-sm font-bold text-slate-400 uppercase mb-2">Compendium Search (Items)</h4>
+                <div class="flex gap-2">
+                    <input type="text" id="item-search-input" class="flex-grow p-2 rounded-xl bg-slate-900 border border-slate-700 focus-accent text-sm" placeholder="Search by Name or ID...">
+                    <button onclick="app.searchItems()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
+                        <i class="ph-bold ph-magnifying-glass"></i>
+                    </button>
+                </div>
+                <!-- Search Results -->
+                <div id="item-search-results" class="mt-4 space-y-2"></div>
+            </div>
+
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">Equipment</h3>
+                <div class="flex gap-2">
+                    <div class="bg-slate-800 px-3 py-1 rounded-lg border border-slate-700 text-xs flex items-center gap-2">
+                        <span class="text-slate-400">Total Weight:</span>
+                        <span id="total-weight" class="text-accent font-bold">0</span> <span class="text-slate-500">lbs</span>
+                    </div>
+                    <button onclick="app.addItem()" class="bg-accent hover:opacity-90 text-slate-900 px-3 py-1 rounded-xl text-sm font-bold transition-all">
+                        <i class="ph-bold ph-plus"></i> Custom Item
+                    </button>
+                </div>
+            </div>
+            
+            <div id="inventory-grid" class="space-y-3">
+                <!-- Inventory Cards injected here -->
+            </div>
+
+            <!-- Currency -->
+            <div class="grid grid-cols-5 gap-2 mt-6 border-t border-slate-700 pt-6">
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 text-center">
+                    <label class="text-[10px] font-bold text-yellow-600 block mb-1">CP</label>
+                    <input type="number" data-model="currency.cp" class="w-full bg-slate-900 text-center text-sm p-1 rounded border-none" placeholder="0">
+                </div>
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 text-center">
+                    <label class="text-[10px] font-bold text-slate-400 block mb-1">SP</label>
+                    <input type="number" data-model="currency.sp" class="w-full bg-slate-900 text-center text-sm p-1 rounded border-none" placeholder="0">
+                </div>
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 text-center">
+                    <label class="text-[10px] font-bold text-yellow-700 block mb-1">EP</label>
+                    <input type="number" data-model="currency.ep" class="w-full bg-slate-900 text-center text-sm p-1 rounded border-none" placeholder="0">
+                </div>
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 text-center">
+                    <label class="text-[10px] font-bold text-yellow-400 block mb-1">GP</label>
+                    <input type="number" data-model="currency.gp" class="w-full bg-slate-900 text-center text-sm p-1 rounded border-none" placeholder="0">
+                </div>
+                <div class="bg-slate-800 p-2 rounded-xl border border-slate-700 text-center">
+                    <label class="text-[10px] font-bold text-blue-300 block mb-1">PP</label>
+                    <input type="number" data-model="currency.pp" class="w-full bg-slate-900 text-center text-sm p-1 rounded border-none" placeholder="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: BACKSTORY -->
+        <div id="tab-backstory" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="md:col-span-2">
+                    <label class="text-sm font-bold text-slate-400 uppercase mb-2 block">Character History</label>
+                    <textarea data-model="backstory" class="w-full h-64 p-4 rounded-2xl bg-slate-800 focus-accent leading-relaxed text-slate-300 resize-none" placeholder="Born in the shadows of the..." spellcheck="false"></textarea>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Personality Traits</label>
+                        <textarea data-model="traits" class="w-full h-24 p-3 rounded-xl bg-slate-800 text-sm focus-accent resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Ideals</label>
+                        <textarea data-model="ideals" class="w-full h-24 p-3 rounded-xl bg-slate-800 text-sm focus-accent resize-none"></textarea>
+                    </div>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Bonds</label>
+                        <textarea data-model="bonds" class="w-full h-24 p-3 rounded-xl bg-slate-800 text-sm focus-accent resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Flaws</label>
+                        <textarea data-model="flaws" class="w-full h-24 p-3 rounded-xl bg-slate-800 text-sm focus-accent resize-none"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        /**
+         * APPLICATION LOGIC
+         */
+        const app = {
+            data: {},
+            compendiumItems: [], 
+            compendiumFeats: [],
+            defaultData: {
+                name: '', class: '', level: 1, race: '',
+                hp: { current: '', max: '' },
+                ac: '', initiative: '', speed: '',
+                proficiency: '+2', inspiration: false,
+                attributes: {
+                    str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10
+                },
+                skills: [
+                    { name: 'Acrobatics', mod: 'dex', proficient: false, value: 0 },
+                    { name: 'Animal Handling', mod: 'wis', proficient: false, value: 0 },
+                    { name: 'Arcana', mod: 'int', proficient: false, value: 0 },
+                    { name: 'Athletics', mod: 'str', proficient: false, value: 0 },
+                    { name: 'Deception', mod: 'cha', proficient: false, value: 0 },
+                    { name: 'History', mod: 'int', proficient: false, value: 0 },
+                    { name: 'Insight', mod: 'wis', proficient: false, value: 0 },
+                    { name: 'Intimidation', mod: 'cha', proficient: false, value: 0 },
+                    { name: 'Investigation', mod: 'int', proficient: false, value: 0 },
+                    { name: 'Medicine', mod: 'wis', proficient: false, value: 0 },
+                    { name: 'Nature', mod: 'int', proficient: false, value: 0 },
+                    { name: 'Perception', mod: 'wis', proficient: false, value: 0 },
+                    { name: 'Performance', mod: 'cha', proficient: false, value: 0 },
+                    { name: 'Persuasion', mod: 'cha', proficient: false, value: 0 },
+                    { name: 'Religion', mod: 'int', proficient: false, value: 0 },
+                    { name: 'Sleight of Hand', mod: 'dex', proficient: false, value: 0 },
+                    { name: 'Stealth', mod: 'dex', proficient: false, value: 0 },
+                    { name: 'Survival', mod: 'wis', proficient: false, value: 0 }
+                ],
+                abilities: [],
+                inventory: [],
+                currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+                backstory: '', traits: '', ideals: '', bonds: '', flaws: '',
+                settings: { accent: '#f87171' }
+            },
+
+            async init() {
+                await this.loadCompendiums(); // Load items and feats
+                this.loadData();
+                this.renderAll();
+                this.setupListeners();
+                this.setAccentColor(this.data.settings.accent);
+            },
+
+            async loadCompendiums() {
+                try {
+                    // Load Items
+                    try {
+                        const iRes = await fetch('items.json');
+                        if (iRes.ok) this.compendiumItems = await iRes.json();
+                    } catch(e) { console.log('No items.json found'); }
+                    
+                    // Load Feats
+                    try {
+                        const fRes = await fetch('feats.json');
+                        if (fRes.ok) this.compendiumFeats = await fRes.json();
+                    } catch(e) { console.log('No feats.json found'); }
+
+                    // Internal Backup if fetch fails (for demo purposes)
+                    if(this.compendiumItems.length === 0) {
+                       // Keep minimal backup
+                       this.compendiumItems = [
+                        { id: 999, name: "Backup Dagger", weightLb: 1, description: "Finesse, light", isWeapon: true, attackDamage: "1d4" }
+                       ];
+                    }
+
+                } catch (e) {
+                    console.error("Compendium loading error", e);
+                }
+            },
+
+            // --- Search Logic ---
+            searchItems() {
+                const query = document.getElementById('item-search-input').value.toLowerCase();
+                const container = document.getElementById('item-search-results');
+                container.innerHTML = '';
+                
+                if(!query) return;
+
+                const results = this.compendiumItems.filter(item => 
+                    item.name.toLowerCase().includes(query) || 
+                    item.id.toString() === query
+                ).slice(0, 10); // Limit to 10
+
+                if(results.length === 0) {
+                    container.innerHTML = '<div class="text-slate-500 text-xs italic p-2">No items found.</div>';
+                    return;
+                }
+
+                results.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-slate-900 border border-slate-700 rounded-xl overflow-hidden';
+                    el.innerHTML = `
+                        <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors" onclick="app.toggleExpand(this.parentElement)">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-500">#${item.id}</span>
+                                <span class="font-bold text-white text-sm">${item.name}</span>
+                            </div>
+                            <i class="ph-bold ph-caret-down text-slate-500 chevron"></i>
+                        </div>
+                        <div class="expand-content bg-slate-800/50">
+                            <div class="p-3 text-xs text-slate-300 space-y-2 border-t border-slate-700">
+                                <div class="grid grid-cols-2 gap-2 mb-2">
+                                    ${item.category ? `<div><span class="text-slate-500">Type:</span> ${item.category}</div>` : ''}
+                                    ${item.rarity ? `<div><span class="text-slate-500">Rarity:</span> ${item.rarity}</div>` : ''}
+                                    ${item.weightLb ? `<div><span class="text-slate-500">Weight:</span> ${item.weightLb} lb</div>` : ''}
+                                    ${item.averageCostGp ? `<div><span class="text-slate-500">Cost:</span> ${item.averageCostGp} gp</div>` : ''}
+                                </div>
+                                ${item.description ? `<div class="italic border-l-2 border-slate-600 pl-2">${item.description}</div>` : ''}
+                                ${item.isWeapon ? `
+                                    <div class="flex gap-2 mt-2">
+                                        <span class="bg-red-900/30 text-red-300 px-2 py-1 rounded border border-red-900/50">
+                                            Damage: ${item.attackDamage} ${item.damageType || ''}
+                                        </span>
+                                    </div>
+                                ` : ''}
+                                <button onclick="app.addItemFromCompendium(${item.id})" class="w-full mt-3 bg-accent text-slate-900 font-bold py-2 rounded-lg hover:opacity-90 transition-opacity">
+                                    Add to Inventory
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            },
+
+            searchFeats() {
+                const query = document.getElementById('feat-search-input').value.toLowerCase();
+                const container = document.getElementById('feat-search-results');
+                container.innerHTML = '';
+                
+                if(!query) return;
+
+                const results = this.compendiumFeats.filter(feat => 
+                    feat.name.toLowerCase().includes(query) || 
+                    feat.id.toString() === query
+                ).slice(0, 10);
+
+                if(results.length === 0) {
+                    container.innerHTML = '<div class="text-slate-500 text-xs italic p-2">No feats found.</div>';
+                    return;
+                }
+
+                results.forEach(feat => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-slate-900 border border-slate-700 rounded-xl overflow-hidden';
+                    el.innerHTML = `
+                        <div class="p-3 flex justify-between items-center cursor-pointer hover:bg-slate-800 transition-colors" onclick="app.toggleExpand(this.parentElement)">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-mono text-slate-500">#${feat.id}</span>
+                                <span class="font-bold text-white text-sm">${feat.name}</span>
+                            </div>
+                            <i class="ph-bold ph-caret-down text-slate-500 chevron"></i>
+                        </div>
+                        <div class="expand-content bg-slate-800/50">
+                            <div class="p-3 text-xs text-slate-300 space-y-2 border-t border-slate-700">
+                                ${feat.source ? `<div><span class="text-slate-500">Source:</span> ${feat.source}</div>` : ''}
+                                ${feat.prerequisites ? `<div><span class="text-slate-500">Prereq:</span> <span class="text-red-300">${feat.prerequisites}</span></div>` : ''}
+                                <div class="italic border-l-2 border-slate-600 pl-2 mt-2">${feat.description}</div>
+                                ${feat.abilityScoreIncrease ? `<div class="mt-2 bg-slate-900 p-2 rounded"><strong>ASI:</strong> ${feat.abilityScoreIncrease}</div>` : ''}
+                                <button onclick="app.addFeatFromCompendium(${feat.id})" class="w-full mt-3 bg-accent text-slate-900 font-bold py-2 rounded-lg hover:opacity-90 transition-opacity">
+                                    Add Feature
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            },
+
+            toggleExpand(element) {
+                element.classList.toggle('expanded');
+            },
+
+            // --- Addition Logic ---
+
+            addItemFromCompendium(id) {
+                const item = this.compendiumItems.find(i => i.id === id);
+                if(!item) return;
+
+                this.data.inventory.push({
+                    name: item.name,
+                    qty: 1,
+                    weight: item.weightLb || 0,
+                    desc: item.description || '',
+                    isAttack: item.isWeapon || false,
+                    damage: item.attackDamage || '',
+                    // Extended Data
+                    rarity: item.rarity,
+                    cost: item.averageCostGp,
+                    category: item.category,
+                    damageType: item.damageType
+                });
+                this.saveData();
+                this.renderInventory();
+                this.renderAttacks();
+                
+                // Visual feedback
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = "Added!";
+                btn.classList.add('bg-green-500', 'text-white');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('bg-green-500', 'text-white');
+                }, 1000);
+            },
+
+            addFeatFromCompendium(id) {
+                const feat = this.compendiumFeats.find(f => f.id === id);
+                if(!feat) return;
+
+                this.data.abilities.push({
+                    title: feat.name,
+                    desc: feat.description,
+                    roll: '', // Feats usually don't have roll formulas in JSON, user adds manually if needed
+                    // Extended Data
+                    source: feat.source,
+                    prereq: feat.prerequisites
+                });
+                this.saveData();
+                this.renderAbilities();
+
+                 // Visual feedback
+                const btn = event.target;
+                const originalText = btn.innerText;
+                btn.innerText = "Added!";
+                btn.classList.add('bg-green-500', 'text-white');
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.classList.remove('bg-green-500', 'text-white');
+                }, 1000);
+            },
+
+            // --- Core App Logic (Previous) ---
+            
+            loadData() {
+                const stored = localStorage.getItem('dndSheetData');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    this.data = { ...this.defaultData, ...parsed };
+                    if(parsed.attributes) this.data.attributes = { ...this.defaultData.attributes, ...parsed.attributes };
+                    
+                    this.data.inventory = this.data.inventory.map(item => ({
+                        ...item,
+                        desc: item.desc || '',
+                        isAttack: item.isAttack || false,
+                        damage: item.damage || ''
+                    }));
+                } else {
+                    this.data = JSON.parse(JSON.stringify(this.defaultData));
+                }
+            },
+
+            saveData() {
+                localStorage.setItem('dndSheetData', JSON.stringify(this.data));
+            },
+
+            resetData() {
+                if(confirm("Are you sure? This will wipe your character sheet.")) {
+                    localStorage.removeItem('dndSheetData');
+                    location.reload();
+                }
+            },
+
+            setAccentColor(hex) {
+                this.data.settings.accent = hex;
+                let r = 0, g = 0, b = 0;
+                if (hex.length == 4) {
+                    r = "0x" + hex[1] + hex[1];
+                    g = "0x" + hex[2] + hex[2];
+                    b = "0x" + hex[3] + hex[3];
+                } else if (hex.length == 7) {
+                    r = "0x" + hex[1] + hex[2];
+                    g = "0x" + hex[3] + hex[4];
+                    b = "0x" + hex[5] + hex[6];
+                }
+                r /= 255; g /= 255; b /= 255;
+                let cmin = Math.min(r,g,b), cmax = Math.max(r,g,b), delta = cmax - cmin;
+                let h = 0, s = 0, l = 0;
+                
+                if (delta == 0) h = 0;
+                else if (cmax == r) h = ((g - b) / delta) % 6;
+                else if (cmax == g) h = (b - r) / delta + 2;
+                else h = (r - g) / delta + 4;
+                h = Math.round(h * 60);
+                if (h < 0) h += 360;
+                l = (cmax + cmin) / 2;
+                s = delta == 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+                s = +(s * 100).toFixed(1);
+                l = +(l * 100).toFixed(1);
+
+                document.documentElement.style.setProperty('--accent-h', h);
+                document.documentElement.style.setProperty('--accent-s', s + '%');
+                document.documentElement.style.setProperty('--accent-l', l + '%');
+
+                const picker = document.getElementById('accentColor');
+                if(picker) picker.value = hex;
+                this.saveData();
+            },
+
+            switchTab(tabId, btn) {
+                document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+                document.getElementById('tab-' + tabId).classList.add('active');
+                
+                document.querySelectorAll('.nav-btn').forEach(el => {
+                    el.classList.remove('bg-slate-700', 'text-accent');
+                    el.classList.add('text-slate-400');
+                });
+                
+                btn.classList.remove('text-slate-400');
+                btn.classList.add('bg-slate-700', 'text-accent');
+
+                if(tabId === 'main') this.renderAttacks();
+            },
+
+            getMod(val) {
+                return Math.floor((val - 10) / 2);
+            },
+
+            // --- Rendering ---
+            
+            renderAttributes() {
+                const attrs = ['str', 'dex', 'con', 'int', 'wis', 'cha'];
+                attrs.forEach(attr => {
+                    const container = document.getElementById(`attr-${attr}`);
+                    if(!container) return;
+                    const score = this.data.attributes[attr];
+                    const mod = this.getMod(score);
+                    const sign = mod >= 0 ? '+' : '';
+                    
+                    container.innerHTML = `
+                        <div class="bg-slate-800 rounded-2xl border border-slate-700 p-4 flex flex-col items-center relative h-full">
+                            <label class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">${attr}</label>
+                            <input type="number" 
+                                class="text-3xl font-bold bg-slate-900 border border-slate-700 rounded-xl w-16 h-16 text-center focus-accent shadow-inner mb-2" 
+                                value="${score}"
+                                onchange="app.updateAttribute('${attr}', this.value)">
+                            <div class="stat-mod-box text-sm">
+                                ${sign}${mod}
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            renderSkills() {
+                const container = document.getElementById('skills-container');
+                container.innerHTML = '';
+                this.data.skills.forEach((skill, index) => {
+                    container.innerHTML += `
+                        <div class="flex items-center justify-between p-2 rounded-lg hover:bg-slate-750 border-b border-slate-700/50">
+                            <div class="flex items-center gap-3">
+                                <input type="checkbox" ${skill.proficient ? 'checked' : ''} 
+                                    onchange="app.updateSkill(${index}, 'proficient', this.checked)"
+                                    class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-accent focus:ring-accent">
+                                <div>
+                                    <input type="text" value="${skill.name}" 
+                                        onchange="app.updateSkill(${index}, 'name', this.value)"
+                                        class="bg-transparent border-none p-0 text-sm font-bold text-slate-300 w-32 focus:ring-0">
+                                    <span class="text-[10px] uppercase text-slate-500 font-bold ml-1">(${skill.mod})</span>
+                                </div>
+                            </div>
+                            <input type="number" value="${skill.value}" 
+                                onchange="app.updateSkill(${index}, 'value', this.value)"
+                                class="w-12 bg-slate-900 border border-slate-700 rounded text-center text-sm p-1 focus-accent">
+                        </div>
+                    `;
+                });
+            },
+
+            renderInventory() {
+                const container = document.getElementById('inventory-grid');
+                container.innerHTML = '';
+                let totalWeight = 0;
+
+                this.data.inventory.forEach((item, index) => {
+                    const weight = (parseFloat(item.weight) || 0) * (parseFloat(item.qty) || 1);
+                    totalWeight += weight;
+
+                    container.innerHTML += `
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 relative group overflow-hidden">
+                            <!-- Header (Click to expand) -->
+                            <div class="p-4 cursor-pointer hover:bg-slate-700/50 transition-colors" onclick="app.toggleExpand(this.parentElement)">
+                                <div class="flex justify-between items-start gap-4">
+                                    <div class="flex-grow">
+                                        <div class="flex items-center justify-between">
+                                            <input type="text" value="${item.name}" 
+                                                onclick="event.stopPropagation()"
+                                                onchange="app.updateItem(${index}, 'name', this.value)"
+                                                class="bg-transparent border-none text-lg font-bold text-slate-200 focus:ring-0 p-0 mb-1 w-full" 
+                                                placeholder="Item Name">
+                                            <i class="ph-bold ph-caret-down text-slate-500 chevron ml-2"></i>
+                                        </div>
+                                        <div class="flex gap-2 text-xs">
+                                            <div class="flex items-center bg-slate-900 rounded px-2 border border-slate-700" onclick="event.stopPropagation()">
+                                                <span class="text-slate-500 mr-2">Qty</span>
+                                                <input type="number" value="${item.qty}" 
+                                                    onchange="app.updateItem(${index}, 'qty', this.value)"
+                                                    class="w-8 bg-transparent border-none text-center p-0 font-bold">
+                                            </div>
+                                            <div class="flex items-center bg-slate-900 rounded px-2 border border-slate-700" onclick="event.stopPropagation()">
+                                                <span class="text-slate-500 mr-2">Lbs</span>
+                                                <input type="number" value="${item.weight}" 
+                                                    onchange="app.updateItem(${index}, 'weight', this.value)"
+                                                    class="w-8 bg-transparent border-none text-center p-0 font-bold">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button onclick="event.stopPropagation(); app.deleteItem(${index})" class="text-slate-600 hover:text-red-400 p-1">
+                                        <i class="ph-bold ph-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Expanded Content -->
+                            <div class="expand-content bg-slate-900/50">
+                                <div class="p-4 border-t border-slate-700 space-y-3">
+                                    <div class="grid grid-cols-2 gap-2 text-xs text-slate-400">
+                                        ${item.category ? `<div>Type: ${item.category}</div>` : ''}
+                                        ${item.rarity ? `<div>Rarity: ${item.rarity}</div>` : ''}
+                                        ${item.cost ? `<div>Val: ${item.cost} gp</div>` : ''}
+                                    </div>
+                                    
+                                    <textarea onchange="app.updateItem(${index}, 'desc', this.value)"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-xs text-slate-400 h-20 resize-none focus:border-accent" 
+                                        placeholder="Item description...">${item.desc}</textarea>
+
+                                    <div class="flex items-center justify-between border-t border-slate-700/50 pt-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" ${item.isAttack ? 'checked' : ''} 
+                                                onchange="app.updateItem(${index}, 'isAttack', this.checked)"
+                                                class="w-4 h-4 rounded border-slate-600 bg-slate-700 text-accent focus:ring-accent">
+                                            <span class="text-xs font-bold uppercase text-slate-500 ${item.isAttack ? 'text-accent' : ''}">Is Attack?</span>
+                                        </label>
+                                        
+                                        <div class="${item.isAttack ? 'opacity-100' : 'opacity-0 pointer-events-none'} transition-opacity flex items-center gap-2">
+                                            <span class="text-xs text-slate-500 uppercase font-bold">Dmg</span>
+                                            <input type="text" value="${item.damage}" 
+                                                onchange="app.updateItem(${index}, 'damage', this.value)"
+                                                class="w-16 bg-slate-900 border border-slate-700 rounded text-center text-xs p-1 focus-accent" 
+                                                placeholder="1d8">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                if (this.data.inventory.length === 0) {
+                    container.innerHTML = `<div class="text-center py-8 text-slate-600 italic">No items in inventory.</div>`;
+                }
+
+                const totalEl = document.getElementById('total-weight');
+                if(totalEl) totalEl.textContent = totalWeight.toFixed(1);
+            },
+
+            renderAbilities() {
+                const container = document.getElementById('abilities-container');
+                container.innerHTML = '';
+                this.data.abilities.forEach((ability, index) => {
+                    container.innerHTML += `
+                        <div class="bg-slate-800 rounded-xl border border-slate-700 relative group overflow-hidden">
+                             <!-- Header -->
+                            <div class="p-4 cursor-pointer hover:bg-slate-700/50 transition-colors" onclick="app.toggleExpand(this.parentElement)">
+                                <div class="flex justify-between items-center">
+                                    <input type="text" value="${ability.title}" 
+                                        onclick="event.stopPropagation()"
+                                        onchange="app.updateAbility(${index}, 'title', this.value)"
+                                        class="bg-transparent border-none text-accent font-bold text-lg p-0 focus:ring-0 placeholder-red-400/50 w-full" 
+                                        placeholder="Ability Name">
+                                    <div class="flex items-center gap-2">
+                                        <i class="ph-bold ph-caret-down text-slate-500 chevron"></i>
+                                        <button onclick="event.stopPropagation(); app.deleteAbility(${index})" class="text-slate-600 hover:text-red-400">
+                                            <i class="ph-bold ph-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Expanded Content -->
+                            <div class="expand-content bg-slate-900/50">
+                                <div class="p-4 border-t border-slate-700 space-y-3">
+                                    ${ability.prereq ? `<div class="text-xs text-slate-500">Prerequisites: ${ability.prereq}</div>` : ''}
+                                    
+                                    <textarea onchange="app.updateAbility(${index}, 'desc', this.value)"
+                                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-slate-400 h-24 resize-none focus:border-accent" placeholder="Description...">${ability.desc}</textarea>
+                                    
+                                    <div class="flex items-center gap-2 border-t border-slate-700/50 pt-2">
+                                        <label class="text-xs font-bold text-slate-500 uppercase">Roll Formula:</label>
+                                        <input type="text" value="${ability.roll || ''}" 
+                                            onchange="app.updateAbility(${index}, 'roll', this.value)"
+                                            class="flex-grow bg-slate-900 border border-slate-700 rounded p-1 text-xs text-slate-300 focus-accent" placeholder="e.g. !2d6+3 or Leave Empty">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            },
+
+            renderAttacks() {
+                const container = document.getElementById('attacks-grid');
+                const section = document.getElementById('combat-section');
+                container.innerHTML = '';
+                
+                if (!this.data.attributes) return;
+
+                let hasAttacks = false;
+                const strMod = this.getMod(this.data.attributes.str);
+                const strSign = strMod >= 0 ? '+' : '';
+
+                // Inventory Weapons
+                this.data.inventory.forEach(item => {
+                    if (item.isAttack) {
+                        hasAttacks = true;
+                        container.innerHTML += `
+                            <div class="attack-card rounded-xl p-3 border border-slate-700 hover:border-accent transition-colors cursor-pointer group shadow-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-white">${item.name || 'Unnamed'}</h4>
+                                    <i class="ph-fill ph-sword text-slate-500 group-hover:text-accent"></i>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div class="bg-slate-900/80 rounded px-2 py-1 text-xs text-center border border-slate-600">
+                                        <div class="text-slate-400 uppercase text-[10px] font-bold">To Hit</div>
+                                        <div class="text-accent font-mono font-bold">!1d20${strSign}${strMod}</div>
+                                    </div>
+                                    <div class="bg-slate-900/80 rounded px-2 py-1 text-xs text-center border border-slate-600 flex-grow">
+                                        <div class="text-slate-400 uppercase text-[10px] font-bold">Damage</div>
+                                        <div class="text-slate-200 font-mono">${item.damage || '-'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Abilities
+                this.data.abilities.forEach(ability => {
+                    if (ability.roll) {
+                        hasAttacks = true;
+                        container.innerHTML += `
+                            <div class="bg-slate-800 rounded-xl p-3 border border-slate-700 hover:border-purple-400 transition-colors cursor-pointer group shadow-lg">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-bold text-white">${ability.title || 'Unnamed'}</h4>
+                                    <i class="ph-fill ph-magic-wand text-slate-500 group-hover:text-purple-400"></i>
+                                </div>
+                                <div class="bg-slate-900/80 rounded px-2 py-1 text-xs text-center border border-slate-600">
+                                    <div class="text-slate-400 uppercase text-[10px] font-bold">Roll</div>
+                                    <div class="text-purple-300 font-mono font-bold">${ability.roll}</div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (hasAttacks) {
+                    section.classList.remove('hidden');
+                } else {
+                    section.classList.add('hidden');
+                }
+            },
+
+            renderStandardInputs() {
+                document.querySelectorAll('[data-model]').forEach(input => {
+                    const path = input.dataset.model.split('.');
+                    if (path.length === 1) {
+                        if(input.type === 'checkbox') input.checked = this.data[path[0]];
+                        else input.value = this.data[path[0]] || '';
+                    } else if (path.length === 2) {
+                        input.value = this.data[path[0]][path[1]] || '';
+                    }
+                });
+            },
+
+            renderAll() {
+                this.renderStandardInputs();
+                this.renderAttributes();
+                this.renderSkills();
+                this.renderInventory();
+                this.renderAbilities();
+                this.renderAttacks();
+            },
+
+            setupListeners() {
+                document.querySelectorAll('[data-model]').forEach(input => {
+                    input.addEventListener('input', (e) => {
+                        const path = e.target.dataset.model.split('.');
+                        if (path.length === 1) {
+                            if(e.target.type === 'checkbox') this.data[path[0]] = e.target.checked;
+                            else this.data[path[0]] = e.target.value;
+                        } else if (path.length === 2) {
+                            this.data[path[0]][path[1]] = e.target.value;
+                        }
+                        this.saveData();
+                    });
+                });
+
+                document.getElementById('accentColor').addEventListener('input', (e) => {
+                    this.setAccentColor(e.target.value);
+                });
+                
+                // Trigger search on Enter key
+                document.getElementById('item-search-input').addEventListener('keypress', (e) => {
+                    if(e.key === 'Enter') app.searchItems();
+                });
+                document.getElementById('feat-search-input').addEventListener('keypress', (e) => {
+                    if(e.key === 'Enter') app.searchFeats();
+                });
+            },
+
+            // --- Basic Mutations ---
+
+            updateAttribute(attr, val) {
+                this.data.attributes[attr] = parseInt(val) || 10;
+                this.saveData();
+                this.renderAttributes();
+                this.renderAttacks();
+            },
+
+            addCustomSkill() {
+                this.data.skills.push({ name: 'New Skill', mod: 'int', proficient: false, value: 0 });
+                this.saveData();
+                this.renderSkills();
+            },
+
+            updateSkill(index, field, value) {
+                this.data.skills[index][field] = value;
+                this.saveData();
+            },
+
+            addItem() {
+                this.data.inventory.push({ name: '', qty: 1, weight: 0, desc: '', isAttack: false, damage: '' });
+                this.saveData();
+                this.renderInventory();
+            },
+
+            updateItem(index, field, value) {
+                this.data.inventory[index][field] = value;
+                this.saveData();
+                if(field === 'weight' || field === 'qty' || field === 'name') this.renderInventory();
+                if(field === 'isAttack' || field === 'name' || field === 'damage') this.renderAttacks();
+            },
+
+            deleteItem(index) {
+                if(confirm('Remove this item?')) {
+                    this.data.inventory.splice(index, 1);
+                    this.saveData();
+                    this.renderInventory();
+                    this.renderAttacks();
+                }
+            },
+
+            addAbility() {
+                this.data.abilities.push({ title: '', desc: '', roll: '' });
+                this.saveData();
+                this.renderAbilities();
+            },
+
+            updateAbility(index, field, value) {
+                this.data.abilities[index][field] = value;
+                this.saveData();
+                if(field === 'roll' || field === 'title') this.renderAttacks();
+            },
+
+            deleteAbility(index) {
+                if(confirm('Remove this ability?')) {
+                    this.data.abilities.splice(index, 1);
+                    this.saveData();
+                    this.renderAbilities();
+                    this.renderAttacks();
+                }
+            }
+        };
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init(); 
+            const defaultTab = document.querySelector('.nav-btn');
+            if(defaultTab) defaultTab.click();
+        });
+    </script>
+</body>
+</html>
