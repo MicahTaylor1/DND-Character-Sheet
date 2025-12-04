@@ -336,6 +336,8 @@
                 <h4 class="text-sm font-bold text-slate-400 uppercase mb-2">Compendium Search (Feats)</h4>
                 <div class="flex gap-2">
                     <input type="text" id="feat-search-input" class="flex-grow p-2 rounded-xl bg-slate-900 border border-slate-700 focus-accent text-sm" placeholder="Search by Name or ID...">
+                    <!-- DROPDOWN SUGGESTIONS FOR FEATS -->
+                    <div id="feat-dropdown" class="hidden absolute bg-slate-900 border border-slate-700 rounded-xl mt-1 w-full max-h-60 overflow-y-auto z-50"></div>
                     <button onclick="app.searchFeats()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
                         <i class="ph-bold ph-magnifying-glass"></i>
                     </button>
@@ -364,6 +366,8 @@
                 <h4 class="text-sm font-bold text-slate-400 uppercase mb-2">Compendium Search (Items)</h4>
                 <div class="flex gap-2">
                     <input type="text" id="item-search-input" class="flex-grow p-2 rounded-xl bg-slate-900 border border-slate-700 focus-accent text-sm" placeholder="Search by Name or ID...">
+                    <!-- DROPDOWN SUGGESTIONS FOR ITEMS -->
+                    <div id="item-dropdown" class="hidden absolute bg-slate-900 border border-slate-700 rounded-xl mt-1 w-full max-h-60 overflow-y-auto z-50"></div>
                     <button onclick="app.searchItems()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl transition-colors">
                         <i class="ph-bold ph-magnifying-glass"></i>
                     </button>
@@ -609,7 +613,22 @@
                 this.renderAll();
                 this.setupListeners();
                 this.setAccentColor(this.data.settings.accent);
-            },
+                // FEAT AUTOCOMPLETE
+                buildDropdown(
+                    "feat-search-input",
+                    "feat-dropdown",
+                    this.compendiumFeats,
+                    (feat) => app.searchFeats()
+                );
+
+                // ITEM AUTOCOMPLETE
+                buildDropdown(
+                    "item-search-input",
+                    "item-dropdown",
+                    this.compendiumItems,
+                    (item) => app.searchItems()
+                );
+                },
 
             async loadCompendiums() {
                 try {
@@ -1333,7 +1352,56 @@
                 }
             }
         };
+        
+        /* ===========================
+        DROPDOWN AUTOSUGGEST LOGIC
+        =========================== */
 
+    function buildDropdown(inputId, dropdownId, dataList, onSelect) {
+        const input = document.getElementById(inputId);
+        const dropdown = document.getElementById(dropdownId);
+
+        // Show dropdown on click
+        input.addEventListener('click', () => {
+            dropdown.classList.remove("hidden");
+            renderList("");
+        });
+
+        // Auto-filter on typing
+        input.addEventListener('input', (e) => {
+            renderList(e.target.value.toLowerCase());
+        });
+
+        // Hide dropdown when clicking away
+        document.addEventListener("click", (event) => {
+            if (!input.contains(event.target) && !dropdown.contains(event.target)) {
+                dropdown.classList.add("hidden");
+            }
+        });
+
+        function renderList(filter) {
+            dropdown.innerHTML = "";
+
+            const results = dataList.filter(x =>
+                x.name.toLowerCase().includes(filter)
+            ).slice(0, 50);
+
+            results.forEach(result => {
+                const item = document.createElement("div");
+                item.className = "p-2 hover:bg-slate-700 cursor-pointer text-sm";
+
+                item.textContent = result.name;
+
+                item.addEventListener("click", () => {
+                    input.value = result.name;
+                        dropdown.classList.add("hidden");
+                        onSelect(result);
+                    });
+
+                    dropdown.appendChild(item);
+                });
+            }
+        }
         // Start App
         document.addEventListener('DOMContentLoaded', () => {
             app.init(); 
